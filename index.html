@@ -18,15 +18,19 @@
     </style>
 </head>
 <body>
-    <h1>Upload Files to Google Drive v3</h1>
+    <h1>Upload Files to Google Drive v4</h1>
     <input type="file" id="fileInput" multiple />
     <button onclick="uploadFile()">Upload</button>
     <div id="status"></div>
 
     <script>
-        const CLIENT_ID = "432825003173-226vomgsavrfh0sojcr66bud96lv6ogg.apps.googleusercontent.com"; // Replace with your actual Client ID
-        const FOLDER_ID = "1nKBWVtLnUnFEG3TzWfz7LvWZ_ZwUvIXZ"; // Replace with your Google Drive folder ID
+        // Your OAuth 2.0 Client ID (replace with your actual Client ID)
+        const CLIENT_ID = "432825003173-226vomgsavrfh0sojcr66bud96lv6ogg.apps.googleusercontent.com"; 
 
+        // Replace with your Google Drive folder ID
+        const FOLDER_ID = "1nKBWVtLnUnFEG3TzWfz7LvWZ_ZwUvIXZ"; // Example folder ID
+
+        // Run the function when the page loads
         window.onload = function () {
             gapi.load("client:auth2", () => {
                 gapi.auth2.init({ client_id: CLIENT_ID }).then(() => {
@@ -50,8 +54,9 @@
             });
         };
 
+        // Load Google Drive API client
         function loadClient() {
-            gapi.client.setApiKey(""); // Optional: You can add your API key here if necessary
+            gapi.client.setApiKey(""); // Optional: Add your API key here if necessary
             gapi.client.load("https://content.googleapis.com/discovery/v1/apis/drive/v3/rest").then(() => {
                 document.getElementById("status").innerHTML = "Google Drive API Loaded!";
             }).catch((err) => {
@@ -59,6 +64,7 @@
             });
         }
 
+        // Function to handle file upload
         function uploadFile() {
             const files = document.getElementById("fileInput").files;
             const status = document.getElementById("status");
@@ -74,6 +80,7 @@
                 if (authResponse && authResponse.access_token) {
                     const accessToken = authResponse.access_token;
 
+                    // Iterate over selected files and upload each one
                     Array.from(files).forEach((file) => {
                         const metadata = {
                             name: file.name,
@@ -85,6 +92,7 @@
                         formData.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
                         formData.append("file", file);
 
+                        // Make the API request to upload the file
                         fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
                             method: "POST",
                             headers: {
