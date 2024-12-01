@@ -19,7 +19,7 @@
     </style>
 </head>
 <body>
-    <h1>Upload Files to Google Drive v7</h1>
+    <h1>Upload Files to Google Drive v8</h1>
     <input type="file" id="fileInput" multiple />
     <button onclick="uploadFile()">Upload</button>
     <div id="status"></div>
@@ -28,7 +28,7 @@
         data-callback="handleCredentialResponse"
         data-scope="https://www.googleapis.com/auth/drive.file">
     </div>
-    
+
     <script>
         const FOLDER_ID = "1nKBWVtLnUnFEG3TzWfz7LvWZ_ZwUvIXZ"; // Replace with your folder ID
 
@@ -75,7 +75,8 @@
                 fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
                     method: "POST",
                     headers: {
-                        Authorization: `Bearer ${accessToken}`,
+                        "Authorization": `Bearer ${accessToken}`,
+                        "Content-Type": "multipart/related",
                     },
                     body: formData,
                 })
