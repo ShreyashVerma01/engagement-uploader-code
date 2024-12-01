@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload to Google Drive</title>
+    <title>Upload Multiple Files to Google Drive</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -21,45 +21,51 @@
     </style>
 </head>
 <body>
-    <h1>Upload Files to Google Drive v13</h1>
-    <input type="file" id="fileInput" accept="image/*" />
-    <button onclick="uploadFile()">Upload</button>
+    <h1>Upload Multiple Files to Google Drive v14</h1>
+    <input type="file" id="fileInput" multiple accept="image/*" />
+    <button onclick="uploadFiles()">Upload</button>
     <div id="status"></div>
 
     <script>
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbygEuIU0R3Z8e2ycmV4HFSCD7m9BsBBUxB-7tOQ3Wqd3dddSMPAYs6EXxr8wTpFQ7zfnw/exec"; // Replace with your Web App URL
 
-        function uploadFile() {
+        function uploadFiles() {
             const files = document.getElementById("fileInput").files;
             const status = document.getElementById("status");
 
             if (files.length === 0) {
-                status.innerHTML = "No file selected!";
+                status.innerHTML = "No files selected!";
                 return;
             }
 
             status.innerHTML = "Uploading...";
 
-            // Check the file input to ensure it has files
+            // Log the file data to verify if it's being captured correctly
             console.log(files);
 
-            // Create FormData object to send the file
+            // Create FormData object to send all selected files
             const formData = new FormData();
-            formData.append("file", files[0]); // Append the first selected file
 
-            // Log FormData to verify the file is appended correctly
-            console.log(formData);
+            // Append all selected files to FormData
+            for (let i = 0; i < files.length; i++) {
+                formData.append("files[]", files[i]); // Use 'files[]' to send multiple files
+            }
+
+            // Log FormData to verify that it's populated
+            console.log("FormData: ", formData);
 
             // Send the FormData to the Google Apps Script Web App
             fetch(WEB_APP_URL, {
                 method: 'POST',
                 body: formData,
             })
-            .then(response => response.text())
+            .then(response => response.text()) // Use text() for logging response as plain text
             .then(result => {
+                console.log("Upload result: ", result); // Log result to verify the upload response
                 status.innerHTML = `Upload successful: ${result}`;
             })
             .catch(error => {
+                console.error("Upload error: ", error); // Log any errors
                 status.innerHTML = `Error: ${error.message}`;
             });
         }
