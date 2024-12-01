@@ -21,8 +21,8 @@
     </style>
 </head>
 <body>
-    <h1>Upload Files to Google Drive</h1>
-    <input type="file" id="fileInput" accept="image/*" multiple />
+    <h1>Upload Files to Google Drive v12</h1>
+    <input type="file" id="fileInput" accept="image/*" />
     <button onclick="uploadFile()">Upload</button>
     <div id="status"></div>
 
@@ -40,9 +40,11 @@
 
             status.innerHTML = "Uploading...";
 
+            // Create FormData object to send the file
             const formData = new FormData();
-            formData.append("file", files[0]); // Append the first selected file to 'file' key
+            formData.append("file", files[0]); // Append the first selected file
 
+            // Send the FormData to the Google Apps Script Web App
             fetch(WEB_APP_URL, {
                 method: 'POST',
                 body: formData,
