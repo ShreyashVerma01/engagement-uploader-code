@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Google Drive Uploader</title>
+    <title>Google Drive Uploader v2</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://apis.google.com/js/api.js"></script>
     <style>
@@ -18,32 +18,44 @@
     </style>
 </head>
 <body>
-    <h1>Upload Files to Google Drive v2</h1>
+    <h1>Upload Files to Google Drive v3</h1>
     <input type="file" id="fileInput" multiple />
     <button onclick="uploadFile()">Upload</button>
     <div id="status"></div>
 
     <script>
-        const CLIENT_ID = "432825003173-226vomgsavrfh0sojcr66bud96lv6ogg.apps.googleusercontent.com";// Replace with your actual Client ID
-
-        // Replace with your Google Drive folder ID
-        const FOLDER_ID = "1nKBWVtLnUnFEG3TzWfz7LvWZ_ZwUvIXZ"; // Example: "1abc1234dEfGHjKlM9nOPqRSTUV"
+        const CLIENT_ID = "432825003173-226vomgsavrfh0sojcr66bud96lv6ogg.apps.googleusercontent.com"; // Replace with your actual Client ID
+        const FOLDER_ID = "1nKBWVtLnUnFEG3TzWfz7LvWZ_ZwUvIXZ"; // Replace with your Google Drive folder ID
 
         window.onload = function () {
             gapi.load("client:auth2", () => {
                 gapi.auth2.init({ client_id: CLIENT_ID }).then(() => {
-                    gapi.auth2.getAuthInstance().signIn().then(() => {
-                        document.getElementById("status").innerHTML = "Authorized and API Loaded!";
+                    const authInstance = gapi.auth2.getAuthInstance();
+                    // Check if the user is already signed in
+                    if (authInstance.isSignedIn.get()) {
+                        document.getElementById("status").innerHTML = "User already signed in.";
                         loadClient();
-                    });
+                    } else {
+                        // Sign in the user
+                        authInstance.signIn().then(() => {
+                            document.getElementById("status").innerHTML = "Signed in and API Loaded!";
+                            loadClient();
+                        }).catch((err) => {
+                            document.getElementById("status").innerHTML = "Sign-in failed: " + err.error;
+                        });
+                    }
+                }).catch((err) => {
+                    document.getElementById("status").innerHTML = "Error initializing API client: " + err.error;
                 });
             });
         };
 
         function loadClient() {
-            gapi.client.setApiKey(API_KEY);
+            gapi.client.setApiKey(""); // Optional: You can add your API key here if necessary
             gapi.client.load("https://content.googleapis.com/discovery/v1/apis/drive/v3/rest").then(() => {
-                document.getElementById("status").innerHTML = "Ready to Upload!";
+                document.getElementById("status").innerHTML = "Google Drive API Loaded!";
+            }).catch((err) => {
+                document.getElementById("status").innerHTML = "Error loading Drive API: " + err.message;
             });
         }
 
@@ -55,24 +67,24 @@
                 return;
             }
             status.innerHTML = "Uploading...";
-        
+
             const authInstance = gapi.auth2.getAuthInstance();
             if (authInstance.isSignedIn.get()) {
                 const authResponse = authInstance.currentUser.get().getAuthResponse();
                 if (authResponse && authResponse.access_token) {
                     const accessToken = authResponse.access_token;
-        
+
                     Array.from(files).forEach((file) => {
                         const metadata = {
                             name: file.name,
                             mimeType: file.type,
-                            parents: [FOLDER_ID] // Add the parent folder ID here
+                            parents: [FOLDER_ID] // Folder ID to store file
                         };
-        
+
                         const formData = new FormData();
                         formData.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
                         formData.append("file", file);
-        
+
                         fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
                             method: "POST",
                             headers: {
