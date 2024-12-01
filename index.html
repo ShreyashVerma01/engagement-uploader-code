@@ -3,71 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload Multiple Files to Google Drive</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 20px;
-        }
-        input, button {
-            margin: 10px;
-            padding: 10px;
-            font-size: 16px;
-        }
-        #status {
-            margin-top: 20px;
-        }
-    </style>
+    <title>Google Drive File Upload</title>
+    <script src="https://apis.google.com/js/api.js"></script>
 </head>
 <body>
-    <h1>Upload Multiple Files to Google Drive v14</h1>
-    <input type="file" id="fileInput" multiple accept="image/*" />
-    <button onclick="uploadFiles()">Upload</button>
+    <h1>Upload Files to Google Drive v15</h1>
+    <input type="file" id="fileInput" multiple />
+    <button onclick="uploadFile()">Upload</button>
     <div id="status"></div>
 
     <script>
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbygEuIU0R3Z8e2ycmV4HFSCD7m9BsBBUxB-7tOQ3Wqd3dddSMPAYs6EXxr8wTpFQ7zfnw/exec"; // Replace with your Web App URL
+        const CLIENT_ID = "432825003173-226vomgsavrfh0sojcr66bud96lv6ogg.apps.googleusercontent.com"; // Replace with your actual Client ID
+        const FOLDER_ID = "1nKBWVtLnUnFEG3TzWfz7LvWZ_ZwUvIXZ"; // Replace with your Google Drive Folder ID
 
-        function uploadFiles() {
+        window.onload = function () {
+            gapi.load("client:auth2", () => {
+                gapi.auth2.init({ client_id: CLIENT_ID }).then(() => {
+                    gapi.auth2.getAuthInstance().signIn().then(() => {
+                        document.getElementById("status").innerHTML = "Authorized and API Loaded!";
+                        loadClient();
+                    });
+                });
+            });
+        };
+
+        function loadClient() {
+            gapi.client.setApiKey("YOUR_API_KEY"); // Replace with your actual API key
+            gapi.client.load("https://content.googleapis.com/discovery/v1/apis/drive/v3/rest").then(() => {
+                document.getElementById("status").innerHTML = "Ready to Upload!";
+            });
+        }
+
+        function uploadFile() {
             const files = document.getElementById("fileInput").files;
             const status = document.getElementById("status");
 
             if (files.length === 0) {
-                status.innerHTML = "No files selected!";
+                status.innerHTML = "No file selected!";
                 return;
             }
 
             status.innerHTML = "Uploading...";
 
-            // Log the file data to verify if it's being captured correctly
-            console.log(files);
+            const authInstance = gapi.auth2.getAuthInstance();
+            if (authInstance.isSignedIn.get()) {
+                const authResponse = authInstance.currentUser.get().getAuthResponse();
+                if (authResponse && authResponse.access_token) {
+                    const accessToken = authResponse.access_token;
 
-            // Create FormData object to send all selected files
-            const formData = new FormData();
+                    // Loop through all selected files and upload them
+                    Array.from(files).forEach((file) => {
+                        const metadata = {
+                            name: file.name,
+                            mimeType: file.type,
+                            parents: [FOLDER_ID], // Set the parent folder ID
+                        };
 
-            // Append all selected files to FormData
-            for (let i = 0; i < files.length; i++) {
-                formData.append("files[]", files[i]); // Use 'files[]' to send multiple files
+                        const formData = new FormData();
+                        formData.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+                        formData.append("file", file); // Append file to the FormData object
+
+                        fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+                            method: "POST",
+                            headers: {
+                                Authorization: `Bearer ${accessToken}`,
+                            },
+                            body: formData,
+                        })
+                            .then((response) => response.json())
+                            .then((data) => {
+                                status.innerHTML += `<p>Uploaded: ${data.name}</p>`;
+                            })
+                            .catch((err) => {
+                                status.innerHTML = `<p>Error: ${err.message}</p>`;
+                            });
+                    });
+                } else {
+                    status.innerHTML = "Access token not available!";
+                }
+            } else {
+                status.innerHTML = "User not signed in!";
             }
-
-            // Log FormData to verify that it's populated
-            console.log("FormData: ", formData);
-
-            // Send the FormData to the Google Apps Script Web App
-            fetch(WEB_APP_URL, {
-                method: 'POST',
-                body: formData,
-            })
-            .then(response => response.text()) // Use text() for logging response as plain text
-            .then(result => {
-                console.log("Upload result: ", result); // Log result to verify the upload response
-                status.innerHTML = `Upload successful: ${result}`;
-            })
-            .catch(error => {
-                console.error("Upload error: ", error); // Log any errors
-                status.innerHTML = `Error: ${error.message}`;
-            });
         }
     </script>
 </body>
