@@ -55,33 +55,45 @@
                 return;
             }
             status.innerHTML = "Uploading...";
-
-            Array.from(files).forEach((file) => {
-                const metadata = {
-                    name: file.name,
-                    mimeType: file.type,
-                    parents: [FOLDER_ID] // Add the parent folder ID here
-                };
-
-                const formData = new FormData();
-                formData.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
-                formData.append("file", file);
-
-                fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${gapi.auth.getToken().access_token}`,
-                    },
-                    body: formData,
-                })
-                    .then((response) => response.json())
-                    .then((data) => {
-                        status.innerHTML += `<p>Uploaded: ${data.name}</p>`;
-                    })
-                    .catch((err) => {
-                        status.innerHTML = `<p>Error: ${err.message}</p>`;
+        
+            const authInstance = gapi.auth2.getAuthInstance();
+            if (authInstance.isSignedIn.get()) {
+                const authResponse = authInstance.currentUser.get().getAuthResponse();
+                if (authResponse && authResponse.access_token) {
+                    const accessToken = authResponse.access_token;
+        
+                    Array.from(files).forEach((file) => {
+                        const metadata = {
+                            name: file.name,
+                            mimeType: file.type,
+                            parents: [FOLDER_ID] // Add the parent folder ID here
+                        };
+        
+                        const formData = new FormData();
+                        formData.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+                        formData.append("file", file);
+        
+                        fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+                            method: "POST",
+                            headers: {
+                                Authorization: `Bearer ${accessToken}`,
+                            },
+                            body: formData,
+                        })
+                            .then((response) => response.json())
+                            .then((data) => {
+                                status.innerHTML += `<p>Uploaded: ${data.name}</p>`;
+                            })
+                            .catch((err) => {
+                                status.innerHTML = `<p>Error: ${err.message}</p>`;
+                            });
                     });
-            });
+                } else {
+                    status.innerHTML = "Access token not available!";
+                }
+            } else {
+                status.innerHTML = "User not signed in!";
+            }
         }
     </script>
 </body>
