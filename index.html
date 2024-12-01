@@ -19,13 +19,14 @@
     </style>
 </head>
 <body>
-    <h1>Upload Files to Google Drive v6</h1>
+    <h1>Upload Files to Google Drive v7</h1>
     <input type="file" id="fileInput" multiple />
     <button onclick="uploadFile()">Upload</button>
     <div id="status"></div>
     <div id="g_id_onload"
         data-client_id="432825003173-226vomgsavrfh0sojcr66bud96lv6ogg.apps.googleusercontent.com"
-        data-callback="handleCredentialResponse">
+        data-callback="handleCredentialResponse"
+        data-scope="https://www.googleapis.com/auth/drive.file">
     </div>
     
     <script>
@@ -53,7 +54,10 @@
 
             status.innerHTML = "Uploading...";
 
-            // Get the access token from the credential
+            // Log the access token to check its validity
+            console.log("Access Token:", credential);
+
+            // Use the access token retrieved from the Google Identity Services
             const accessToken = credential;
 
             Array.from(files).forEach(function (file) {
@@ -75,7 +79,13 @@
                     },
                     body: formData,
                 })
-                .then((response) => response.json())
+                .then((response) => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        throw new Error(`Error: ${response.status} - ${response.statusText}`);
+                    }
+                })
                 .then((data) => {
                     status.innerHTML += `<p>Uploaded: ${data.name}</p>`;
                 })
