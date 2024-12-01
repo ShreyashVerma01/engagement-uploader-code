@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Drive Uploader</title>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <title>Upload to Google Drive</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -16,42 +15,21 @@
             padding: 10px;
             font-size: 16px;
         }
+        #status {
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
-    <h1>Upload Files to Google Drive v10</h1>
-    
-    <!-- File input for user to select files -->
+    <h1>Upload Files to Google Drive v11</h1>
     <input type="file" id="fileInput" multiple />
     <button onclick="uploadFile()">Upload</button>
-    
-    <!-- Status message -->
     <div id="status"></div>
-    
-    <!-- Google Sign-In button -->
-    <div id="g_id_onload"
-        data-client_id="432825003173-226vomgsavrfh0sojcr66bud96lv6ogg.apps.googleusercontent.com"
-        data-callback="handleCredentialResponse"
-        data-scope="https://www.googleapis.com/auth/drive.file">
-    </div>
 
     <script>
-        // Google Apps Script Web App URL
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbygEuIU0R3Z8e2ycmV4HFSCD7m9BsBBUxB-7tOQ3Wqd3dddSMPAYs6EXxr8wTpFQ7zfnw/exec"; // Replace with your Apps Script Web App URL
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbygEuIU0R3Z8e2ycmV4HFSCD7m9BsBBUxB-7tOQ3Wqd3dddSMPAYs6EXxr8wTpFQ7zfnw/exec"; // Replace with your Web App URL
 
-        // Function to handle the response after login
-        function handleCredentialResponse(response) {
-            const credential = response.credential;
-            if (credential) {
-                document.getElementById("status").innerHTML = "User Signed In!";
-                uploadFile(credential); // Start the file upload process
-            } else {
-                document.getElementById("status").innerHTML = "Sign-in failed!";
-            }
-        }
-
-        // Function to upload the selected file
-        function uploadFile(credential) {
+        function uploadFile() {
             const files = document.getElementById("fileInput").files;
             const status = document.getElementById("status");
 
@@ -62,21 +40,19 @@
 
             status.innerHTML = "Uploading...";
 
-            // Create FormData to send the file to the Apps Script
             const formData = new FormData();
-            formData.append("file", files[0]); // Upload the first selected file (for multiple files, modify accordingly)
+            formData.append("file", files[0]); // Upload the first selected file
 
-            // Send the file to the Google Apps Script Web App using fetch
             fetch(WEB_APP_URL, {
                 method: 'POST',
                 body: formData,
             })
             .then(response => response.text())
             .then(result => {
-                status.innerHTML = `Upload successful: ${result}`; // Display success message with file link
+                status.innerHTML = `Upload successful: ${result}`;
             })
             .catch(error => {
-                status.innerHTML = `Error: ${error}`; // Display error message
+                status.innerHTML = `Error: ${error.message}`;
             });
         }
     </script>
