@@ -19,10 +19,16 @@
     </style>
 </head>
 <body>
-    <h1>Upload Files to Google Drive v8</h1>
+    <h1>Upload Files to Google Drive v9</h1>
+    
+    <!-- File input for user to select files -->
     <input type="file" id="fileInput" multiple />
     <button onclick="uploadFile()">Upload</button>
+    
+    <!-- Status message -->
     <div id="status"></div>
+    
+    <!-- Google Sign-In button -->
     <div id="g_id_onload"
         data-client_id="432825003173-226vomgsavrfh0sojcr66bud96lv6ogg.apps.googleusercontent.com"
         data-callback="handleCredentialResponse"
@@ -30,7 +36,8 @@
     </div>
 
     <script>
-        const FOLDER_ID = "1nKBWVtLnUnFEG3TzWfz7LvWZ_ZwUvIXZ"; // Replace with your folder ID
+        // Google Apps Script Web App URL
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbygEuIU0R3Z8e2ycmV4HFSCD7m9BsBBUxB-7tOQ3Wqd3dddSMPAYs6EXxr8wTpFQ7zfnw/exec"; // Replace with your Apps Script Web App URL
 
         // Function to handle the response after login
         function handleCredentialResponse(response) {
@@ -43,6 +50,7 @@
             }
         }
 
+        // Function to upload the selected file
         function uploadFile(credential) {
             const files = document.getElementById("fileInput").files;
             const status = document.getElementById("status");
@@ -54,45 +62,21 @@
 
             status.innerHTML = "Uploading...";
 
-            // Log the access token to check its validity
-            console.log("Access Token:", credential);
+            // Create FormData to send the file to the Apps Script
+            const formData = new FormData();
+            formData.append("file", files[0]); // Upload the first selected file (for multiple files, modify accordingly)
 
-            // Use the access token retrieved from the Google Identity Services
-            const accessToken = credential;
-
-            Array.from(files).forEach(function (file) {
-                const metadata = {
-                    name: file.name,
-                    mimeType: file.type,
-                    parents: [FOLDER_ID]
-                };
-
-                const formData = new FormData();
-                formData.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
-                formData.append("file", file);
-
-                // Upload the file using the Drive API
-                fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
-                    method: "POST",
-                    headers: {
-                        "Authorization": `Bearer ${accessToken}`,
-                        "Content-Type": "multipart/related",
-                    },
-                    body: formData,
-                })
-                .then((response) => {
-                    if (response.ok) {
-                        return response.json();
-                    } else {
-                        throw new Error(`Error: ${response.status} - ${response.statusText}`);
-                    }
-                })
-                .then((data) => {
-                    status.innerHTML += `<p>Uploaded: ${data.name}</p>`;
-                })
-                .catch((err) => {
-                    status.innerHTML = `<p>Error: ${err.message}</p>`;
-                });
+            // Send the file to the Google Apps Script Web App using fetch
+            fetch(WEB_APP_URL, {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => response.text())
+            .then(result => {
+                status.innerHTML = `Upload successful: ${result}`; // Display success message with file link
+            })
+            .catch(error => {
+                status.innerHTML = `Error: ${error}`; // Display error message
             });
         }
     </script>
