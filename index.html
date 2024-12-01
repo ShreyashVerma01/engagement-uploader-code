@@ -19,26 +19,31 @@
 </head>
 <body>
     <h1>Upload Files to Google Drive</h1>
-    <button onclick="authenticate()">Authorize</button>
-    <button onclick="loadClient()">Load API Client</button>
     <input type="file" id="fileInput" multiple />
     <button onclick="uploadFile()">Upload</button>
     <div id="status"></div>
 
     <script>
-        let CLIENT_ID = "http://432825003173-jrm7q10n4ug16th57dqjtlfte3c1ttns.apps.googleusercontent.com"; // Replace with your actual Client ID
-        let API_KEY = "YOUR_API_KEY"; // Optional: Replace with API Key (or remove if not used)
+        const CLIENT_ID = "http://432825003173-jrm7q10n4ug16th57dqjtlfte3c1ttns.apps.googleusercontent.com"; // Replace with your actual Client ID
 
-        function authenticate() {
-            gapi.auth2.getAuthInstance().signIn().then(() => {
-                document.getElementById('status').innerHTML = "Authorized!";
+        // Replace with your Google Drive folder ID
+        const FOLDER_ID = "1nKBWVtLnUnFEG3TzWfz7LvWZ_ZwUvIXZ"; // Example: "1abc1234dEfGHjKlM9nOPqRSTUV"
+
+        window.onload = function () {
+            gapi.load("client:auth2", () => {
+                gapi.auth2.init({ client_id: CLIENT_ID }).then(() => {
+                    gapi.auth2.getAuthInstance().signIn().then(() => {
+                        document.getElementById("status").innerHTML = "Authorized and API Loaded!";
+                        loadClient();
+                    });
+                });
             });
-        }
+        };
 
         function loadClient() {
             gapi.client.setApiKey(API_KEY);
             gapi.client.load("https://content.googleapis.com/discovery/v1/apis/drive/v3/rest").then(() => {
-                document.getElementById('status').innerHTML = "Drive API Loaded!";
+                document.getElementById("status").innerHTML = "Ready to Upload!";
             });
         }
 
@@ -51,10 +56,11 @@
             }
             status.innerHTML = "Uploading...";
 
-            Array.from(files).forEach(file => {
+            Array.from(files).forEach((file) => {
                 const metadata = {
                     name: file.name,
                     mimeType: file.type,
+                    parents: [FOLDER_ID] // Add the parent folder ID here
                 };
 
                 const formData = new FormData();
@@ -68,21 +74,15 @@
                     },
                     body: formData,
                 })
-                    .then(response => response.json())
-                    .then(data => {
+                    .then((response) => response.json())
+                    .then((data) => {
                         status.innerHTML += `<p>Uploaded: ${data.name}</p>`;
                     })
-                    .catch(err => {
-                        status.innerHTML += `<p>Error: ${err.message}</p>`;
+                    .catch((err) => {
+                        status.innerHTML = `<p>Error: ${err.message}</p>`;
                     });
             });
         }
-
-        gapi.load("client:auth2", () => {
-            gapi.auth2.init({
-                client_id: CLIENT_ID,
-            });
-        });
     </script>
 </body>
 </html>
