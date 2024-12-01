@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Google Drive Uploader v2</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://apis.google.com/js/api.js"></script>
+    <title>Google Drive Uploader</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -18,95 +19,70 @@
     </style>
 </head>
 <body>
-    <h1>Upload Files to Google Drive v5</h1>
+    <h1>Upload Files to Google Drive v6</h1>
     <input type="file" id="fileInput" multiple />
     <button onclick="uploadFile()">Upload</button>
     <div id="status"></div>
-
+    <div id="g_id_onload"
+        data-client_id="432825003173-226vomgsavrfh0sojcr66bud96lv6ogg.apps.googleusercontent.com"
+        data-callback="handleCredentialResponse">
+    </div>
+    
     <script>
-        // Replace with your actual OAuth 2.0 Client ID
-        const CLIENT_ID = "432825003173-226vomgsavrfh0sojcr66bud96lv6ogg.apps.googleusercontent.com";
+        const FOLDER_ID = "1nKBWVtLnUnFEG3TzWfz7LvWZ_ZwUvIXZ"; // Replace with your folder ID
 
-        // Replace with your Google Drive folder ID
-        const FOLDER_ID = "1nKBWVtLnUnFEG3TzWfz7LvWZ_ZwUvIXZ"; 
-
-        window.onload = function () {
-            gapi.load("client:auth2", () => {
-                gapi.auth2.init({ client_id: CLIENT_ID }).then(() => {
-                    const authInstance = gapi.auth2.getAuthInstance();
-                    if (authInstance.isSignedIn.get()) {
-                        document.getElementById("status").innerHTML = "User already signed in.";
-                        loadClient();
-                    } else {
-                        authInstance.signIn().then(() => {
-                            document.getElementById("status").innerHTML = "Signed in and API Loaded!";
-                            loadClient();
-                        }).catch((err) => {
-                            document.getElementById("status").innerHTML = "Sign-in failed: " + err.error;
-                        });
-                    }
-                }).catch((err) => {
-                    document.getElementById("status").innerHTML = "Error initializing API client: " + err.error;
-                });
-            });
-        };
-
-        function loadClient() {
-            gapi.client.setApiKey(""); // Optional: Add your API key here if necessary
-            gapi.client.load("https://content.googleapis.com/discovery/v1/apis/drive/v3/rest").then(() => {
-                document.getElementById("status").innerHTML = "Google Drive API Loaded!";
-            }).catch((err) => {
-                document.getElementById("status").innerHTML = "Error loading Drive API: " + err.message;
-            });
+        // Function to handle the response after login
+        function handleCredentialResponse(response) {
+            const credential = response.credential;
+            if (credential) {
+                document.getElementById("status").innerHTML = "User Signed In!";
+                uploadFile(credential); // Start the file upload process
+            } else {
+                document.getElementById("status").innerHTML = "Sign-in failed!";
+            }
         }
 
-        function uploadFile() {
+        function uploadFile(credential) {
             const files = document.getElementById("fileInput").files;
             const status = document.getElementById("status");
+
             if (files.length === 0) {
                 status.innerHTML = "No file selected!";
                 return;
             }
+
             status.innerHTML = "Uploading...";
 
-            const authInstance = gapi.auth2.getAuthInstance();
-            if (authInstance.isSignedIn.get()) {
-                const authResponse = authInstance.currentUser.get().getAuthResponse();
-                if (authResponse && authResponse.access_token) {
-                    const accessToken = authResponse.access_token;
+            // Get the access token from the credential
+            const accessToken = credential;
 
-                    Array.from(files).forEach((file) => {
-                        const metadata = {
-                            name: file.name,
-                            mimeType: file.type,
-                            parents: [FOLDER_ID]
-                        };
+            Array.from(files).forEach(function (file) {
+                const metadata = {
+                    name: file.name,
+                    mimeType: file.type,
+                    parents: [FOLDER_ID]
+                };
 
-                        const formData = new FormData();
-                        formData.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
-                        formData.append("file", file);
+                const formData = new FormData();
+                formData.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+                formData.append("file", file);
 
-                        fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
-                            method: "POST",
-                            headers: {
-                                Authorization: `Bearer ${accessToken}`,
-                            },
-                            body: formData,
-                        })
-                            .then((response) => response.json())
-                            .then((data) => {
-                                status.innerHTML += `<p>Uploaded: ${data.name}</p>`;
-                            })
-                            .catch((err) => {
-                                status.innerHTML = `<p>Error: ${err.message}</p>`;
-                            });
-                    });
-                } else {
-                    status.innerHTML = "Access token not available!";
-                }
-            } else {
-                status.innerHTML = "User not signed in!";
-            }
+                // Upload the file using the Drive API
+                fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                    body: formData,
+                })
+                .then((response) => response.json())
+                .then((data) => {
+                    status.innerHTML += `<p>Uploaded: ${data.name}</p>`;
+                })
+                .catch((err) => {
+                    status.innerHTML = `<p>Error: ${err.message}</p>`;
+                });
+            });
         }
     </script>
 </body>
