@@ -3,88 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Drive File Upload</title>
-    <script src="https://apis.google.com/js/api.js"></script>
+    <title>Image Uploader</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Upload Files to Google Drive v15</h1>
-    <input type="file" id="fileInput" multiple />
-    <button onclick="uploadFile()">Upload</button>
-    <div id="status"></div>
+    <input type="file" id="image-input" multiple>
+    <button id="upload-btn">Upload to Google Drive</button>
+    <div id="output"></div>
 
-    <script>
-        const CLIENT_ID = "432825003173-226vomgsavrfh0sojcr66bud96lv6ogg.apps.googleusercontent.com"; // Replace with your actual Client ID
-        const FOLDER_ID = "1nKBWVtLnUnFEG3TzWfz7LvWZ_ZwUvIXZ"; // Replace with your Google Drive Folder ID
-
-        window.onload = function () {
-            gapi.load("client:auth2", () => {
-                gapi.auth2.init({ client_id: CLIENT_ID }).then(() => {
-                    gapi.auth2.getAuthInstance().signIn().then(() => {
-                        document.getElementById("status").innerHTML = "Authorized and API Loaded!";
-                        loadClient();
-                    });
-                });
-            });
-        };
-
-        function loadClient() {
-            gapi.client.setApiKey("YOUR_API_KEY"); // Replace with your actual API key
-            gapi.client.load("https://content.googleapis.com/discovery/v1/apis/drive/v3/rest").then(() => {
-                document.getElementById("status").innerHTML = "Ready to Upload!";
-            });
-        }
-
-        function uploadFile() {
-            const files = document.getElementById("fileInput").files;
-            const status = document.getElementById("status");
-
-            if (files.length === 0) {
-                status.innerHTML = "No file selected!";
-                return;
-            }
-
-            status.innerHTML = "Uploading...";
-
-            const authInstance = gapi.auth2.getAuthInstance();
-            if (authInstance.isSignedIn.get()) {
-                const authResponse = authInstance.currentUser.get().getAuthResponse();
-                if (authResponse && authResponse.access_token) {
-                    const accessToken = authResponse.access_token;
-
-                    // Loop through all selected files and upload them
-                    Array.from(files).forEach((file) => {
-                        const metadata = {
-                            name: file.name,
-                            mimeType: file.type,
-                            parents: [FOLDER_ID], // Set the parent folder ID
-                        };
-
-                        const formData = new FormData();
-                        formData.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
-                        formData.append("file", file); // Append file to the FormData object
-
-                        fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
-                            method: "POST",
-                            headers: {
-                                Authorization: `Bearer ${accessToken}`,
-                            },
-                            body: formData,
-                        })
-                            .then((response) => response.json())
-                            .then((data) => {
-                                status.innerHTML += `<p>Uploaded: ${data.name}</p>`;
-                            })
-                            .catch((err) => {
-                                status.innerHTML = `<p>Error: ${err.message}</p>`;
-                            });
-                    });
-                } else {
-                    status.innerHTML = "Access token not available!";
-                }
-            } else {
-                status.innerHTML = "User not signed in!";
-            }
-        }
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
